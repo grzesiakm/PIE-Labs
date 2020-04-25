@@ -1,33 +1,56 @@
 import random
 import time
+import logging
+from abc import ABC
 
-class Plane:
+
+class Event(ABC):
     def __init__(self):
-        self._tilt = 0  # plane starts so tilt degree equals to 0
+        pass
+
+
+class Turbulation(Event):
+    def __init__(self):
+        self._shift = random.gauss(0, 2*rate_of_correction)
+       
+    @property
+    def mayday(self):
+        return self._shift
+
+
+class Plane(Event):
+    def __init__(self, rate_of_correction):
+        self._tilt = 0.0 
+        self.set_tilt = 0.0
+        self.rate_of_correction = rate_of_correction
+        self._correction = 0.0
 
     def got_turbulation(self):
-        shift = (random.gauss(0, 2*rate_of_correction) * ((90 - abs(self._tilt)) / 90))
-        self._tilt += shift
-        
+        self._tilt += Turbulation().mayday
+
     def correct_tilt(self):
-        return self._tilt * 0.2
+        self._correction = round(self.rate_of_correction * (self.set_tilt - self._tilt), 8)
+        self._tilt += self._correction
 
-    def fly(self):
-        correct = self.correct_tilt()
-        if self._tilt <= 0:
-            self._tilt += self.correct_tilt()
-        else:
-            self._tilt -= self.correct_tilt()
-        print("Current orientation is {}. Correction made by {}.\n".format(self._tilt, correct))
-           
-
+    def __str__(self):
+        return f"***Current orientation: {round(self._tilt, 8)}. Correction made by {self._correction}.***\n"
+                 
     def simulation(self):
+        i = 0
         while True:
             self.got_turbulation()
-            self.fly()
-            time.sleep(0.6)
+            self.correct_tilt()
+            print(plane)
+            logging.info(f"Loop #{i}. Correction: {self._correction} and orientation: {round(self._tilt, 8)}\n")
+            i += 1
+            time.sleep(0.9)
 
-rate_of_correction = 0.2 * 90
-plane = Plane()
-plane.simulation()
 
+if __name__ == "__main__":
+    logging.basicConfig(filename='plane.log', filemode='w', level=logging.INFO)
+    rate_of_correction = 0.4
+    plane = Plane(rate_of_correction)
+    try:
+        plane.simulation()
+    except:
+        logging.error('ctrl+c used - program terminated')
